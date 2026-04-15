@@ -1,0 +1,11 @@
+{
+  "routes": [
+    {
+      "id": "default-liquipedia",
+      "keywords": ["liquipedia"],
+      "tool": "list_categories",
+      "args": {},
+      "enabled": true
+    }
+  ]
+}
