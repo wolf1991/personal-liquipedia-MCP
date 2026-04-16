@@ -4,6 +4,7 @@ const BASE_URL = "https://liquipedia.net";
 const CACHE_TTL_MS = Number.parseInt(process.env.LIQUIPEDIA_CACHE_TTL_MS || "", 10) || 60_000;
 const CACHE_MAX_ENTRIES = Number.parseInt(process.env.LIQUIPEDIA_CACHE_MAX_ENTRIES || "", 10) || 32;
 const matchCache = new Map();
+const LIQUIPEDIA_HOST = "liquipedia.net";
 
 function cleanText(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
@@ -15,6 +16,43 @@ function toAbsoluteUrl(url) {
   if (url.startsWith("//")) return `https:${url}`;
   if (url.startsWith("/")) return `${BASE_URL}${url}`;
   return `${BASE_URL}/${url}`;
+}
+
+function isExternalUrl(url) {
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host !== LIQUIPEDIA_HOST && !host.endsWith(`.${LIQUIPEDIA_HOST}`);
+  } catch {
+    return false;
+  }
+}
+
+function extractExternalLink(el, $) {
+  const candidateAreas = [
+    el.find(".match-info-links"),
+    el.find(".match-info-footer"),
+    el
+  ];
+
+  for (const area of candidateAreas) {
+    const links = area
+      .find("a")
+      .map((_, a) => {
+        const anchor = $(a);
+        const href = anchor.attr("href") || "";
+        const label = cleanText(anchor.text());
+        if (/watch/i.test(label) || /Special:Stream/i.test(href)) return null;
+        return toAbsoluteUrl(href);
+      })
+      .get()
+      .filter(Boolean);
+
+    const external = links.find((url) => isExternalUrl(url));
+    if (external) return external;
+  }
+
+  return null;
 }
 
 function extractTeam($, scope) {
@@ -106,6 +144,7 @@ function parseMatchCards(html, categoryKey) {
       score,
       tournament,
       details_url: toAbsoluteUrl(matchDetailsAnchor.attr("href")),
+      external_link: extractExternalLink(el, $),
       watch_links: watchLinks
     };
 
