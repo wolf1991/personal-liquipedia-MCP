@@ -1,10 +1,3 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
-
-const ROUTE_FILE_PATH =
-  process.env.LIQUIPEDIA_KEYWORD_ROUTES_FILE ||
-  path.resolve(process.cwd(), "keyword-routes.json");
-
 const ALLOWED_TOOLS = new Set([
   "list_categories",
   "get_upcoming_matches",
@@ -52,29 +45,10 @@ function normalizeRoute(input) {
   };
 }
 
-async function ensureRouteFileExists() {
-  try {
-    await fs.access(ROUTE_FILE_PATH);
-  } catch {
-    const seed = { routes: DEFAULT_ROUTES };
-    await fs.writeFile(ROUTE_FILE_PATH, JSON.stringify(seed, null, 2), "utf8");
-  }
-}
-
 export async function initKeywordRoutes() {
   if (initialized) return;
-
-  await ensureRouteFileExists();
-  const raw = await fs.readFile(ROUTE_FILE_PATH, "utf8");
-  const parsed = JSON.parse(raw);
-  const fileRoutes = Array.isArray(parsed?.routes) ? parsed.routes : [];
-
-  routes = fileRoutes.map(normalizeRoute);
+  routes = DEFAULT_ROUTES.map(normalizeRoute);
   initialized = true;
-}
-
-export function getRouteFilePath() {
-  return ROUTE_FILE_PATH;
 }
 
 export function getKeywordRoutes() {
@@ -89,27 +63,6 @@ export function matchRoutesByText(text) {
     if (!route.enabled) return false;
     return route.keywords.some((keyword) => normalized.includes(keyword));
   });
-}
-
-export async function upsertKeywordRoute(input, persist = true) {
-  const route = normalizeRoute(input);
-  const index = routes.findIndex((item) => item.id === route.id);
-
-  if (index >= 0) {
-    routes[index] = route;
-  } else {
-    routes.push(route);
-  }
-
-  if (persist) {
-    await fs.writeFile(
-      ROUTE_FILE_PATH,
-      JSON.stringify({ routes }, null, 2),
-      "utf8"
-    );
-  }
-
-  return route;
 }
 
 export function isAllowedRouteTool(name) {

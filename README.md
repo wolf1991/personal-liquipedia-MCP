@@ -77,53 +77,15 @@ npx --yes liquipedia-mcp
 - `get_results`
   - 参数：`category`（必填）, `limit`（可选，默认 20，最大 100）
 - `get_keyword_routes`
-  - 查看当前关键词路由表（含路由文件路径）
-- `register_keyword_route`
-  - 通过 MCP 注册/更新关键词路由（可持久化到文件）
+  - 查看当前内置关键词路由表
 - `route_by_keywords`
   - 输入一段文本，按关键词路由自动匹配并执行对应工具
 
 ## 5. 关键词路由（支持 `liquipedia` 触发）
 
-项目根目录公开了路由文件：`keyword-routes.json`。
-
-默认内置路由：
+当前为代码内置固定路由（不会在用户本地生成或写入文件）：
 
 - `liquipedia` -> `list_categories`
-
-你可以直接编辑文件加入一个或多个关键词路由，例如：
-
-```json
-{
-  "routes": [
-    {
-      "id": "default-liquipedia",
-      "keywords": ["liquipedia"],
-      "tool": "list_categories",
-      "args": {},
-      "enabled": true
-    },
-    {
-      "id": "dota2-results-cn",
-      "keywords": ["liquipedia dota2 结果", "dota2 最近结果"],
-      "tool": "get_results",
-      "args": {
-        "category": "dota2",
-        "limit": 10
-      },
-      "enabled": true
-    }
-  ]
-}
-```
-
-也可以通过 MCP 动态注册（无需手改文件）：
-
-- 调用 `register_keyword_route`
-  - `keywords`: 一个或多个关键词
-  - `tool`: `list_categories` / `get_upcoming_matches` / `get_live_matches` / `get_results`
-  - `args`: 默认参数（如 `{ "category": "dota2", "limit": 10 }`）
-  - `persist`: 默认 `true`（会写入 `keyword-routes.json`）
 
 调用 `route_by_keywords` 时，传入 `text` 即可触发匹配并执行；`dry_run=true` 可只看命中和计划调用。
 

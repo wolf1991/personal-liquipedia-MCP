@@ -7,11 +7,9 @@ import { LIQUIPEDIA_CATEGORIES, assertValidCategory } from "./categories.js";
 import { fetchAndParseMatches, getMatchesByStatus } from "./liquipedia.js";
 import {
   getKeywordRoutes,
-  getRouteFilePath,
   initKeywordRoutes,
   isAllowedRouteTool,
-  matchRoutesByText,
-  upsertKeywordRoute
+  matchRoutesByText
 } from "./keywordRoutes.js";
 
 const server = new Server(
@@ -77,38 +75,10 @@ const TOOL_SCHEMAS = {
   },
   get_keyword_routes: {
     name: "get_keyword_routes",
-    description: "Get current keyword routing table used for Liquipedia tool triggering.",
+    description: "Get current hardcoded keyword routing table used for Liquipedia tool triggering.",
     inputSchema: {
       type: "object",
       properties: {},
-      additionalProperties: false
-    }
-  },
-  register_keyword_route: {
-    name: "register_keyword_route",
-    description: "Register or update one keyword route (persist to keyword-routes.json by default).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        id: { type: "string", description: "Optional route id. Same id means update." },
-        keywords: {
-          type: "array",
-          items: { type: "string" },
-          minItems: 1,
-          description: "One or more keywords, e.g. ['liquipedia','liq']"
-        },
-        tool: {
-          type: "string",
-          enum: ["list_categories", "get_upcoming_matches", "get_live_matches", "get_results"]
-        },
-        args: {
-          type: "object",
-          description: "Default args when route matches, e.g. {\"category\":\"dota2\",\"limit\":10}"
-        },
-        enabled: { type: "boolean", default: true },
-        persist: { type: "boolean", default: true }
-      },
-      required: ["keywords", "tool"],
       additionalProperties: false
     }
   },
@@ -191,28 +161,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     if (name === "get_keyword_routes") {
       return asResult({
-        file_path: getRouteFilePath(),
         total: getKeywordRoutes().length,
         routes: getKeywordRoutes()
-      });
-    }
-
-    if (name === "register_keyword_route") {
-      const saved = await upsertKeywordRoute(
-        {
-          id: args.id,
-          keywords: args.keywords,
-          tool: args.tool,
-          args: args.args,
-          enabled: args.enabled
-        },
-        args.persist !== false
-      );
-
-      return asResult({
-        saved,
-        file_path: getRouteFilePath(),
-        total_routes: getKeywordRoutes().length
       });
     }
 
